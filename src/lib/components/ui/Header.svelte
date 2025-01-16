@@ -21,19 +21,14 @@
      */
     export const menuItems = [
         {
-            name: 'Apple',
-            href: '#',
-            icon: Apple,
-        },
-        {
-            name: 'Book',
-            href: '#',
+            name: 'Single',
+            href: '/single',
             icon: Book,
         },
         {
-            name: 'Castle',
-            href: '#',
-            icon: Castle,
+            name: 'Multi',
+            href: '/multi',
+            icon: BookCopy,
         },
     ];
 </script>
@@ -49,9 +44,8 @@
     // times. So says the [Lucide Svelte
     // docs](https://lucide.dev/guide/packages/lucide-svelte#example), at least.
     import Menu from 'lucide-svelte/icons/menu';
-    import Apple from 'lucide-svelte/icons/apple';
     import Book from 'lucide-svelte/icons/book';
-    import Castle from 'lucide-svelte/icons/castle';
+    import BookCopy from 'lucide-svelte/icons/book-copy';
 
     import ConnectButtons from '$lib/components/ConnectButtons.svelte';
 </script>
@@ -67,7 +61,7 @@
             </div>
             <div class="flex-none flex items-center">
                 <a href="/" title="Dapp homepage">
-                    <span class="text-lg md:text-xl"> Dapp Title </span>
+                    <span class="text-lg md:text-xl"> Invocation Station </span>
                 </a>
             </div>
             <!-- The "topnav" buttons will not appear on medium or smaller screens -->
