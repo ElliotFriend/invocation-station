@@ -1,59 +1,56 @@
 <script lang="ts">
-    import type { PageData } from './$types';
-    import { Buffer } from 'buffer';
-    // import { Client } from '@stellar/stellar-sdk/contract'
-    import { StrKey, Contract, xdr, contract, Keypair, TransactionBuilder, Networks, BASE_FEE } from '@stellar/stellar-sdk'
-    import { rpc, createContractClient } from '$lib/stellar';
-    import { PUBLIC_STELLAR_NETWORK_PASSPHRASE, PUBLIC_STELLAR_RPC_URL } from '$env/static/public';
-    import RefParser from '@apidevtools/json-schema-ref-parser';
+    import { xdr, contract, Keypair, } from '@stellar/stellar-sdk'
+    import { createContractClient } from '$lib/stellar';
+    import FunctionParam from '$lib/components/FunctionParam.svelte';
+    import { network } from '$lib/NetworkSwitcher.svelte';
 
-    const INPUT_TYPES: Record<number, string> = {
-        4: 'number',
-        16: 'text',
-    }
+    let knownContracts = $state({
+        mainnet: [
+            'CBMGLZ2ZDEJFXIUEO4L3VQO5OKS4CLY3VCYXRZAGFNEIDFIDPWZV23VB', // trading post
+            'CDL74RF5BLYR2YBLCCI7F5FB6TPSCLKEJUBSD2RSVWZ4YHF3VMFAIGWA', // KALE homestead
+        ],
+        testnet: [
+            'CCI4W2X36Y54TRFSBB23QJYTYZS6JPAWKGV2N4S7XTNMJKSQ27ZYXPF3', // hello world
+            'CBFATL6RYVWBUKYOM7CCDRUJVYLTB3SWGZSSN2L3CHK2QAKEKG7VWNGE', // custom types
+            'CBHQGTSBJWA54K67RSG3JPXSZY5IXIZ4FSLJM4PQ33FA3FYCU5YZV7MZ', // other custom types
+            'CCHZKMVGSP3N4YEHD4EFHA6UKND5NDVP4COTAFENAFMPRNTEC2U2ST5F', // BLEND pool
+        ]
+    })
 
-    // GAEYC3IWGG2HLMW2JDHJR3PM5KVOB3MH2FIMWBNED36AY6XAAPB6OGVE
-    const kp = Keypair.fromSecret('SCM2H3FJUMYZOPUDILVYDJAXX3B3SQPL62RWGTR35A6RO3R4C7IL4PAE')
-
-    let { data }: { data: PageData } = $props();
-    // use the guestbook contract for now
-    let contractAddress = $state('CCEMPEEL2NFCCSN2WKSX5AWQSIZLIX4YI2ZLVZGELH7MGRNECQXSIYSH')
+    let contractAddress = $state('CBHQGTSBJWA54K67RSG3JPXSZY5IXIZ4FSLJM4PQ33FA3FYCU5YZV7MZ')
+    let publicKey = $state('GA4XQJFTIVONNM2MXU5ICJU2HSRVNK6O45EJO7SJF43OXW4TDWQOQZ4W')
+    let selectedFunction = $state('')
+    let funcArgs: Record<string, any> = $state({})
     let client: contract.Client|undefined = $state()
+
+
+    let kp = $derived(Keypair.fromPublicKey(publicKey));
     let spec = $derived(client?.spec)
     let funcs = $derived(spec?.funcs())
-    let selectedFunction = $state('')
-    let contractSchema = $derived(client?.spec.jsonSchema())
-    let funcSchema = $state()
-    let funcArgs: Record<string, any> = $state({})
-    // let funcSchema = $derived.by(async () => await RefParser.dereference(client?.spec.jsonSchema(selectedFunction.toString())))
-    // let funcSchema
-    // $inspect('new schema', funcSchema)
-    // $inspect(funcArgs)
-    // $effect(() => {
-    //     console.log('funcArgs', funcArgs)
-    // })
+    let funcSchema = $derived(selectedFunction ? spec?.getFunc(selectedFunction.toString()) : undefined)
+    let selectedFunc = $derived({
+        name: funcSchema?.name().toString(),
+        doc: funcSchema?.doc().toString(),
+        args: funcSchema?.inputs(),
+    })
 
     async function loadContract() {
-        client = await createContractClient(contractAddress)
-        console.log('client', client)
-        await RefParser.dereference(contractSchema)
-        console.log('contract schema', contractSchema)
-        console.log('own props?', Object.getOwnPropertyNames(client))
-        // console.log('function thing?', client['edit_message'])
+        client = await createContractClient(contractAddress, kp.publicKey())
+        selectContractFunction('')
+    }
+
+    function selectContractFunction(funcName: string) {
+        selectedFunction = funcName
+        funcArgs = {}
     }
 
     async function invokeContract() {
         const method = selectedFunction.toString()
-        const account = await rpc.getAccount(kp.publicKey())
-        const invokingContract = new Contract(contractAddress)
 
         let atMaybe = await contract.AssembledTransaction.build({
             method: method,
             args: client?.spec.funcArgsToScVals(method, funcArgs),
-            contractId: contractAddress,
-            publicKey: kp.publicKey(),
-            networkPassphrase: PUBLIC_STELLAR_NETWORK_PASSPHRASE,
-            rpcUrl: PUBLIC_STELLAR_RPC_URL,
+            ...client!.options,
             parseResultXdr: (result: xdr.ScVal) => spec?.funcResToNative(method, result)
         })
         console.log('atMaybe?', atMaybe)
@@ -72,52 +69,65 @@
 
         // }))
     }
-
-    // function parseFuncSchema() {
-    //     funcSchema = contractSchema?.definitions?.[selectedFunction.toString()]
-    //     console.log('func schema', funcSchema)
-    // }
 </script>
 
 <h1 class="h1">Invoke a single contract</h1>
 
-<h2 class="h2">Load contract</h2>
+<h2 class="h2">Load Contract</h2>
 
 <form class="space-y-4">
     <label class="label">
-        <span>Contract address</span>
-        <input class="input" type="text" placeholder="C..." bind:value={contractAddress} />
+        <span>Contract Address</span>
+        <select class="select" placeholder="C..." bind:value={contractAddress}>
+            {#each knownContracts[network.usingMainnet ? 'mainnet' : 'testnet'] as contract}
+                <option>{contract}</option>
+            {/each}
+        </select>
+    </label>
+
+    <label class="label">
+        <span>Source Account Public Key</span>
+        <input class="input font-mono" type="text" placeholder="G..." bind:value={publicKey} />
     </label>
 
     <button class="btn variant-filled-primary" onclick={loadContract}>Load Contract</button>
 </form>
 
 {#if client && funcs}
-    <h2 class="h2">Contract details</h2>
+    <h2 class="h2">Contract Details</h2>
 
     <h3 class="h3">Address</h3>
-    <p>{contractAddress}</p>
+    <p><code class="code">{contractAddress}</code></p>
+
+    <h3 class="h3">Wasm Hash</h3>
+    <p><code class="code">deadb33f...</code></p>
 
     <h3 class="h3">Functions</h3>
-    <select class="select" bind:value={selectedFunction}>
+    <select class="select" bind:value={() => selectedFunction, selectContractFunction}>
         {#each funcs as func}
             <option>{func.name()}</option>
         {/each}
     </select>
 
     {#if client && selectedFunction}
+        {#if selectedFunc.doc}
+            <h3 class="h3">Description</h3>
+            <pre class="pre">{selectedFunc.doc}</pre>
+        {/if}
+
         <h3 class="h3">Arguments</h3>
-        <form class="space-y-4">
-            {#each client.spec.getFunc(selectedFunction.toString()).inputs() as arg}
-                {@const argName = arg.name().toString()}
-                {@const argType = INPUT_TYPES[arg.type().switch().value]}
-                <label class="label">
-                    <span>{argName}</span>
-                    <input class="input" type={argType} bind:value={funcArgs[argName]} />
-                </label>
-            {/each}
+        <div class="space-y-4">
+            {#if selectedFunc.args?.length}
+                {#each selectedFunc.args as arg (arg.name().toString())}
+                    <FunctionParam {arg} bind:value={funcArgs[arg.name().toString()]} />
+                {/each}
+
+                <pre class="pre">{JSON.stringify(funcArgs, null, 2)}</pre>
+            {:else}
+                <p>None required</p>
+            {/if}
 
             <button class="btn variant-filled-primary" onclick={invokeContract}>Invoke Contract</button>
-        </form>
+        </div>
     {/if}
 {/if}
