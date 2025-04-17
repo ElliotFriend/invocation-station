@@ -18,10 +18,10 @@
     "devDependencies": {
         "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
         "@playwright/test": "^1.49.1",
-        "@skeletonlabs/skeleton": "^2.10.4",
-        "@skeletonlabs/tw-plugin": "^0.4.0",
+        "@skeletonlabs/skeleton": "^2.11.0",
+        "@skeletonlabs/tw-plugin": "^0.4.1",
         "@sveltejs/adapter-auto": "^3.3.1",
-        "@sveltejs/kit": "^2.15.2",
+        "@sveltejs/kit": "^2.20.5",
         "@sveltejs/vite-plugin-svelte": "^5.0.3",
         "@tailwindcss/forms": "^0.5.10",
         "@tailwindcss/typography": "^0.5.16",
@@ -37,6 +37,7 @@
         "eslint-plugin-svelte": "^2.46.1",
         "glob": "^11.0.1",
         "lucide-svelte": "^0.471.0",
+        "mdsvex": "^0.12.3",
         "postcss": "^8.5.0",
         "prettier": "^3.4.2",
         "prettier-plugin-svelte": "^3.3.3",
@@ -52,7 +53,8 @@
     "type": "module",
     "dependencies": {
         "@apidevtools/json-schema-ref-parser": "^11.7.3",
-        "@stellar/stellar-sdk": "^13.1.0",
-        "@stellar/stellar-xdr-json": "22.0.0-rc.1.1"
+        "@stellar/stellar-sdk": "^13.2.0",
+        "@stellar/stellar-xdr-json": "22.0.0-rc.1.1",
+        "markdown-it": "^14.1.0"
     }
 }

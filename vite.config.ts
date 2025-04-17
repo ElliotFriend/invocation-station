@@ -6,6 +6,7 @@ import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfil
 export default defineConfig({
     plugins: [sveltekit(), purgeCss()],
     optimizeDeps: {
+        include: ['@stellar/stellar-xdr-json'],
         esbuildOptions: {
             define: {
                 global: 'globalThis'
